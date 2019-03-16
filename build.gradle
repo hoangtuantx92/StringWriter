@@ -1,0 +1,59 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath ("org.junit.platform:junit-platform-gradle-plugin:1.0.0")
+  }
+}
+
+apply plugin: 'org.junit.platform.gradle.plugin'
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+dependencies {       
+  testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.0.0'
+  testCompile group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.0.0'
+    testCompile "org.mockito:mockito-core:2.+"
+}
+
+repositories {
+  mavenCentral()
+  jcenter()
+}                           
+
+compileJava {
+  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Werror"
+}
+
+compileTestJava {
+  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Werror"
+}
+
+sourceSets.main.java.srcDirs = ['StringFileOperator/src']
+sourceSets.test.java.srcDirs = ['StringFileOperator/test']
+                            
+project.afterEvaluate {
+    def junitPlatformTestTask = project.tasks.getByName('junitPlatformTest')
+
+    jacoco {
+        toolVersion = "0.7.9"
+        applyTo junitPlatformTestTask
+    }
+
+    project.task(type: JacocoReport, "junitPlatformJacocoReport",
+      {
+        sourceDirectories = files("./StringFileOperator/src")
+        classDirectories = fileTree(dir: './build/classes/java/main/WriterPackage',
+		      excludes: ['**/ui/*.class'])
+        executionData junitPlatformTestTask
+      })
+}
+
+task(runui, dependsOn: 'classes', type: JavaExec) {
+  main = 'stocks.ui.StockReporterUI'
+  classpath = sourceSets.main.runtimeClasspath
+    args'input.txt'
+}
+
+defaultTasks 'clean', 'test', 'junitPlatformJacocoReport'
